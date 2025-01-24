@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en"> 
+ <head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <title>Save Your's Files</title> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script> 
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            font-size: 1em;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: bold;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%; /* Full width for better responsive layout */
+            font-size: 1em;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box; /* To avoid padding pushing the width out */
+        }
+
+        .dropdown {
+            position: relative;
+            width: 100%; /* Full width for better responsive layout */
+        }
+
+        .dropdown button {
+            width: 100%; /* Button takes the full width */
+            font-size: 1em;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            width: 100%;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .dropdown-menu label {
+            display: block;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .dropdown-menu label:hover {
+            background-color: #f0f0f0;
+        }
+
+        button {
+            font-size: 1em;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style> 
+ </head> 
+ <body> 
+  <div class="container"> 
+   <h1>Save Your's Files</h1> <label for="textInput">Enter Text</label> <textarea id="textInput" rows="8" placeholder="Enter your text here"></textarea> <label for="fileNameInput">Enter File Name</label> 
+   <input type="text" id="fileNameInput" placeholder="my_file"> <label>Select File Format</label> 
+   <div class="dropdown"> <button id="formatButton">Select Format</button> 
+    <div class="dropdown-menu" id="formatMenu"> <label data-format="txt">Text File (.txt)</label> <label data-format="html">HTML File (.html)</label> <label data-format="doc">Doc File (.doc)</label> <label data-format="pdf">PDF File (.pdf)</label> 
+    </div> 
+   </div> <button id="downloadButton">Download File</button> 
+  </div> 
+  <script>
+        // Dropdown menu logic
+        const formatButton = document.getElementById('formatButton');
+        const formatMenu = document.getElementById('formatMenu');
+        const downloadButton = document.getElementById('downloadButton');
+        let selectedFormat = null;
+
+        formatButton.addEventListener('click', () => {
+            formatMenu.style.display = formatMenu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        formatMenu.addEventListener('click', (e) => {
+            if (e.target.dataset.format) {
+                selectedFormat = e.target.dataset.format;
+                formatButton.textContent = e.target.textContent;
+                formatMenu.style.display = 'none';
+            }
+        });
+
+        // File saving logic
+        downloadButton.addEventListener('click', () => {
+            const text = document.getElementById('textInput').value;
+            const fileName = document.getElementById('fileNameInput').value || 'my-file';
+
+            if (!selectedFormat) {
+                alert('Please select a file format.');
+                return;
+            }
+
+            if (selectedFormat === 'txt') {
+                const blob = new Blob([text], { type: 'text/plain' });
+                saveFile(blob, `${fileName}.txt`);
+            } else if (selectedFormat === 'html') {
+                const blob = new Blob([`<html><body>${text}</body></html>`], { type: 'text/html' });
+                saveFile(blob, `${fileName}.html`);
+            } else if (selectedFormat === 'doc') {
+                const blob = new Blob([text], { type: 'application/msword' });
+                saveFile(blob, `${fileName}.doc`);
+            } else if (selectedFormat === 'pdf') {
+                generatePDF(text, fileName);
+            }
+        });
+
+        // Function to save the file
+        function saveFile(blob, fileName) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+        }
+
+        // Function to generate PDF
+        function generatePDF(text, fileName) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+
+            const marginLeft = 10;
+            const marginTop = 10;
+            const pageWidth = pdf.internal.pageSize.width - marginLeft * 2;
+            const pageHeight = pdf.internal.pageSize.height - marginTop * 2;
+
+            const lines = pdf.splitTextToSize(text, pageWidth);
+            let cursorY = marginTop;
+
+            lines.forEach((line, index) => {
+                if (cursorY + 10 > pageHeight) {
+                    pdf.addPage();
+                    cursorY = marginTop;
+                }
+                pdf.text(line, marginLeft, cursorY);
+                cursorY += 10;
+            });
+
+            pdf.save(`${fileName}.pdf`);
+        }
+    </script> 
+  <div style="text-align: center; margin-top: 20px;"> 
+   <p>Connect with me:</p> <a href="https://in.linkedin.com/in/md-nosibul-islam-b79a59268" target="_blank" style="text-decoration: none; color: #333; font-size: 18px; margin-right: 15px;"> LinkedIn </a> <a href="https://github.com/mdnosibulislam" target="_blank" style="text-decoration: none; color: #333; font-size: 18px;"> GitHub </a> 
+  </div> 
+ 
+</body></html>
